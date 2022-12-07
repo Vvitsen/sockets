@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-
+void messaging(int);
 
 int main(int argc, char* argv[]){
 
@@ -40,11 +40,46 @@ int main(int argc, char* argv[]){
 
 	struct sockaddr_in cli_addr;
 	socklen_t clien = sizeof(cli_addr);
-	int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clien); //creates a new connected socket
-	if (newsockfd < 0){
-		perror("ERROR on accept");
-		exit(1);
+
+	while(1){
+		int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clien); //creates a new connected socket
+		if (newsockfd < 0){
+			perror("ERROR on accept");
+			exit(1);
+		}
+		int pid = fork();
+		if (pid < 0){
+			perror("ERROR on fork");
+			exit(1);
+		}
+		if (pid == 0){
+			close(sockfd);
+			messaging(newsockfd);
+			exit(1);
+		}
+		else close(newsockfd);
 	}
+
+//	char buffer[256]; // to contain read characters
+//	bzero(buffer, 256);
+//
+//	if (read(newsockfd,buffer, 255) < 0){
+//		perror("ERROR reading from socket");
+//		exit(1);
+//	}
+//	printf("message: %s/n", buffer);
+//
+//	if (write(newsockfd, "I got your message\n", 20) < 0){
+//		perror("ERROR writing to socket");
+//		exit(1);
+//	}
+
+//	close(newsockfd);
+	close(sockfd);
+	return 0;
+}
+
+void messaging(newsockfd){
 
 	char buffer[256]; // to contain read characters
 	bzero(buffer, 256);
@@ -53,14 +88,10 @@ int main(int argc, char* argv[]){
 		perror("ERROR reading from socket");
 		exit(1);
 	}
-	printf("message: %s/n", buffer);
+	printf("%s\n", buffer);
 
 	if (write(newsockfd, "I got your message\n", 20) < 0){
 		perror("ERROR writing to socket");
 		exit(1);
 	}
-
-	close(newsockfd);
-	close(sockfd);
-	return 0;
 }
