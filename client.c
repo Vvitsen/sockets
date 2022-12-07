@@ -58,7 +58,7 @@ int main(int argc, char* argv[]){
 		perror("ERROR reading from socket");
 		exit(0);
 	}
-	printf("message: %s/n", buffer);
+	printf(" - %s", buffer);
 	
 	close(sockfd);
 	return 0;

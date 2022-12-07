@@ -88,9 +88,9 @@ void messaging(newsockfd){
 		perror("ERROR reading from socket");
 		exit(1);
 	}
-	printf("%s\n", buffer);
+	printf(" - %s", buffer);
 
-	if (write(newsockfd, "I got your message\n", 20) < 0){
+	if (write(newsockfd, "I got your message", 18) < 0){
 		perror("ERROR writing to socket");
 		exit(1);
 	}
