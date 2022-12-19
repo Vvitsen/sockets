@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <fcntl.h>
 
 int main(int argc, char* argv[]){
 
@@ -45,21 +48,43 @@ int main(int argc, char* argv[]){
 	}
 	printf("please, enter the message: \n");
 	
-	char buffer[256]; // to contain read characters
-	bzero(buffer, 256); // set all the buffer values to zero
-	fgets(buffer, 255, stdin); //reads the message from stdin
-	if (write(sockfd, buffer, strlen(buffer)) < 0){ // writes the message to the socket
-		perror("ERROR writing to socket");
-		exit(0);
-	}
 	
-	bzero(buffer, 256);// set all the buffer values to zero again
-	if (read(sockfd, buffer, 255) < 0){ // reads the reply from the socket
-		perror("ERROR reading from socket");
-		exit(0);
+	fd_set sockfds; // set of sockfd
+	int highfd = sockfd;
+	
+	while(1){
+
+		FD_ZERO(&sockfds); // clean set
+		FD_SET(sockfd, &sockfds); // adds descriptor sockfd to the set
+		FD_SET(0, &sockfds);
+
+		int ready = select(highfd + 1, &sockfds, NULL, NULL, NULL);
+		if (ready < 0){
+			perror("ERROR in select");
+			exit(1);
+		}
+
+		char buffer[256]; // to contain read characters
+		if (FD_ISSET(0, &sockfds)){
+			bzero(buffer, 256); // set all the buffer values to zero
+			fgets(buffer, 255, stdin); //reads the message from stdin
+			if (write(sockfd, buffer, strlen(buffer)) < 0){ // writes the message to the socket
+				perror("ERROR writing to socket");
+				exit(0);
+			}
+		}
+		else{
+			bzero(buffer, 256);// set all the buffer values to zero again
+			if (read(sockfd, buffer, 255) < 0){ // reads the reply from the socket
+				perror("ERROR reading from socket");
+				exit(0);
+			}
+			if (strlen(buffer) >0) printf(" - %s", buffer);
+		}
 	}
-	printf(" - %s", buffer);
 	
 	close(sockfd);
 	return 0;
 }
+
+
