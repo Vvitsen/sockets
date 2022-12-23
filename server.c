@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <fcntl.h>
 
-void messaging(int fd);
+void messaging(int fd, int connectlist[] );
 
 int main(int argc, char* argv[]){
 
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
 	memset((char*)&connectlist, 0, sizeof(connectlist));
 	int highfd = sockfd;
 	struct timeval timeout;
-
+	int count = 0;
 	while(1){
 
 		FD_ZERO(&sockfds); // clean set
@@ -115,11 +115,12 @@ int main(int argc, char* argv[]){
 
 			for (i = 0; i < sizeof(connectlist)/4; i++){
 				if (FD_ISSET(connectlist[i], &sockfds)){
-					messaging(connectlist[i]);
+					messaging(connectlist[i], connectlist);
 				}
 			}
 
 		}
+
 	}
 
 //	struct sockaddr_in cli_addr;
@@ -163,19 +164,25 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
-void messaging(int fd){
+void messaging(int fd, int connectlist[]){
 
 	char buffer[256]; // to contain read characters
 	bzero(buffer, 256);
-
-	if (read(fd,buffer, 255) < 0){
+	int nbytes = read(fd, buffer, 255);
+	if (nbytes < 0){
 		perror("ERROR reading from socket");
 		exit(1);
 	}
 	printf(" - %s", buffer);
 
-	if (write(fd, "I got your message\n", 20) < 0){
-		perror("ERROR writing to socket");
-		exit(1);
+	int i;
+	for (i = 0; i < sizeof(connectlist)/4; i++){
+		if (connectlist[i] != fd){
+			if (write(connectlist[i], buffer, nbytes) < 0){
+				perror("ERROR writing to socket");
+				exit(1);
+			}
+		}
 	}
+
 }
